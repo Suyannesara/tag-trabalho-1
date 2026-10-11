@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Análise do grafo</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f5f5f5;
+}
+h2 {
+    padding: 12px 20px 0;
+}
+.abas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 10px 20px;
+}
+.tab {
+    padding: 12px 18px;
+    border: none;
+    cursor: pointer;
+    background: #ddd;
+    border-radius: 5px;
+    font-size: 15px;
+}
+.tab.active {
+    background: #2864dc;
+    color: white;
+}
+.painel {
+    padding: 0 15px 15px;
+}
+iframe {
+    width: 100%;
+    height: 800px;
+    border: none;
+    background: white;
+}
+</style>
+</head>
+<body>
+<h2>Visualização das métricas do grafo</h2>
+<div class="abas">
+    <button class="tab active" onclick="abrirAba('0', this)">
+        Comunidades
+    </button>
+    
+    <button class="tab " onclick="abrirAba('1', this)">
+        Grau
+    </button>
+    
+    <button class="tab " onclick="abrirAba('2', this)">
+        Intermediação
+    </button>
+    
+    <button class="tab " onclick="abrirAba('3', this)">
+        Proximidade
+    </button>
+    
+    <button class="tab " onclick="abrirAba('4', this)">
+        Autovetor
+    </button>
+    </div>
+
+    <div id="painel-0" class="painel"
+         style="display:block">
+        <iframe src="comunidades_louvain.html"></iframe>
+    </div>
+    
+    <div id="painel-1" class="painel"
+         style="display:none">
+        <iframe src="grau.html"></iframe>
+    </div>
+    
+    <div id="painel-2" class="painel"
+         style="display:none">
+        <iframe src="intermediacao.html"></iframe>
+    </div>
+    
+    <div id="painel-3" class="painel"
+         style="display:none">
+        <iframe src="proximidade.html"></iframe>
+    </div>
+    
+    <div id="painel-4" class="painel"
+         style="display:none">
+        <iframe src="autovetor.html"></iframe>
+    </div>
+    
+
+<script>
+function abrirAba(id, botao) {
+    document.querySelectorAll('.painel').forEach(
+        p => p.style.display = 'none'
+    );
+    document.getElementById('painel-' + id).style.display = 'block';
+
+    document.querySelectorAll('.tab').forEach(
+        b => b.classList.remove('active')
+    );
+    botao.classList.add('active');
+}
+</script>
+</body>
+</html>
