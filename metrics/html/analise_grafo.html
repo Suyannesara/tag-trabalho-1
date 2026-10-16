@@ -1,108 +1,342 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Análise do grafo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAG - Análise de Redes Sociais (Facebook Egonets)</title>
 <style>
-body {
-    font-family: Arial, sans-serif;
+* {
+    box-sizing: border-box;
     margin: 0;
-    background: #f5f5f5;
+    padding: 0;
 }
-h2 {
-    padding: 12px 20px 0;
-}
-.abas {
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Elimina rolagem dupla e preenche 100% da tela */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #0f1117;
+    color: #e6edf3;
     display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    padding: 10px 20px;
+    flex-direction: column;
 }
-.tab {
-    padding: 12px 18px;
-    border: none;
-    cursor: pointer;
-    background: #ddd;
-    border-radius: 5px;
+
+/* Barra Superior / Header */
+header {
+    height: 52px;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 15px;
+    font-weight: 600;
+    color: #f0f6fc;
 }
-.tab.active {
-    background: #2864dc;
-    color: white;
+.brand .badge {
+    background: #238636;
+    color: #ffffff;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
-.painel {
-    padding: 0 15px 15px;
+
+/* Abas de Navegação */
+.nav-tabs {
+    display: flex;
+    gap: 4px;
+    background: #0d1117;
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid #30363d;
 }
+.tab-btn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #8b949e;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    white-space: nowrap;
+}
+.tab-btn:hover {
+    color: #f0f6fc;
+    background: rgba(255, 255, 255, 0.06);
+}
+.tab-btn.active {
+    background: #1f6feb;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Botões de Ação na Direita */
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+}
+.action-btn:hover {
+    background: #30363d;
+    color: #f0f6fc;
+    border-color: #8b949e;
+}
+
+/* Área Principal do Grafo (100% da viewport restante) */
+main {
+    flex: 1;
+    width: 100%;
+    height: calc(100vh - 52px);
+    position: relative;
+    background: #ffffff;
+}
+
+.graph-panel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+.graph-panel.active {
+    display: block;
+}
+
 iframe {
     width: 100%;
-    height: 800px;
+    height: 100%;
     border: none;
-    background: white;
+    display: block;
+    background: #ffffff;
 }
+
+/* Painel de Legenda e Informações Flutuante */
+.info-card {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    max-width: 380px;
+    background: rgba(22, 27, 34, 0.95);
+    backdrop-filter: blur(8px);
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    z-index: 100;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.info-card.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+}
+.info-card h4 {
+    color: #58a6ff;
+    font-size: 14px;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.info-card .close-btn {
+    background: transparent;
+    border: none;
+    color: #8b949e;
+    cursor: pointer;
+    font-size: 16px;
+}
+.info-card ul {
+    list-style: none;
+    margin-top: 8px;
+}
+.info-card li {
+    margin-bottom: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+.info-card .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+}
+.dot.red { background: #f85149; }
+.dot.gradient { background: linear-gradient(135deg, #388bfd, #a371f7); }
 </style>
 </head>
 <body>
-<h2>Visualização das métricas do grafo</h2>
-<div class="abas">
-    <button class="tab active" onclick="abrirAba('0', this)">
-        Comunidades
-    </button>
 
-    <button class="tab " onclick="abrirAba('1', this)">
-        Grau
-    </button>
-
-    <button class="tab " onclick="abrirAba('2', this)">
-        Intermediação
-    </button>
-
-    <button class="tab " onclick="abrirAba('3', this)">
-        Proximidade
-    </button>
-
-    <button class="tab " onclick="abrirAba('4', this)">
-        Autovetor
-    </button>
+<header>
+    <div class="brand">
+        <span>TAG 2026/2</span>
+        <span class="badge">Facebook Egonets (N = 404)</span>
     </div>
 
-    <div id="painel-0" class="painel"
-         style="display:block">
-        <iframe src="comunidades_louvain.html"></iframe>
+    <nav class="nav-tabs">
+        <button class="tab-btn active" onclick="abrirAba('0', this, 'comunidades_louvain.html', 'Comunidades (Louvain)')">
+            Comunidades
+        </button>
+        <button class="tab-btn" onclick="abrirAba('1', this, 'grau.html', 'Grau de Centralidade')">
+            Grau
+        </button>
+        <button class="tab-btn" onclick="abrirAba('2', this, 'intermediacao.html', 'Intermediação')">
+            Intermediação
+        </button>
+        <button class="tab-btn" onclick="abrirAba('3', this, 'proximidade.html', 'Proximidade')">
+            Proximidade
+        </button>
+        <button class="tab-btn" onclick="abrirAba('4', this, 'autovetor.html', 'Autovetor')">
+            Autovetor
+        </button>
+        <button class="tab-btn" onclick="abrirAba('5', this, 'generated_graph.html', 'Rede Base')">
+            Rede Base
+        </button>
+    </nav>
+
+    <div class="actions">
+        <button class="action-btn" onclick="toggleInfo()" title="Ver legenda e instruções">
+            ℹ️ Legenda
+        </button>
+        <a id="btn-nova-aba" class="action-btn" href="comunidades_louvain.html" target="_blank" title="Abrir esta visualização em uma aba independente">
+            ↗ Nova Aba
+        </a>
+        <button class="action-btn" onclick="toggleFullscreen()" title="Alternar modo Tela Cheia">
+            ⛶ Tela Cheia
+        </button>
+    </div>
+</header>
+
+<main>
+    <div id="painel-0" class="graph-panel active">
+        <iframe src="comunidades_louvain.html" loading="eager"></iframe>
+    </div>
+    <div id="painel-1" class="graph-panel">
+        <iframe src="grau.html" loading="lazy"></iframe>
+    </div>
+    <div id="painel-2" class="graph-panel">
+        <iframe src="intermediacao.html" loading="lazy"></iframe>
+    </div>
+    <div id="painel-3" class="graph-panel">
+        <iframe src="proximidade.html" loading="lazy"></iframe>
+    </div>
+    <div id="painel-4" class="graph-panel">
+        <iframe src="autovetor.html" loading="lazy"></iframe>
+    </div>
+    <div id="painel-5" class="graph-panel">
+        <iframe src="generated_graph.html" loading="lazy"></iframe>
     </div>
 
-    <div id="painel-1" class="painel"
-         style="display:none">
-        <iframe src="grau.html"></iframe>
+    <!-- Card de Legenda e Dicas de Interação -->
+    <div id="info-card" class="info-card">
+        <h4>
+            <span id="info-title">Comunidades (Louvain)</span>
+            <button class="close-btn" onclick="toggleInfo()">&times;</button>
+        </h4>
+        <p id="info-desc" style="color: #8b949e; font-size: 12px; margin-bottom: 8px;">
+            Mapeamento de círculos sociais e clusters densamente conectados na amostra.
+        </p>
+        <ul>
+            <li><span class="dot red"></span> <strong>Vermelho (Top 10):</strong> Nós com os maiores escores da métrica e rótulos explícitos.</li>
+            <li><span class="dot gradient"></span> <strong>Gradiente / Cores:</strong> Variação proporcional ao valor ou à comunidade pertencente.</li>
+            <li>🔍 <strong>Zoom e Navegação:</strong> Use a roda do mouse para aproximar e clique-arraste para mover a visão da câmera.</li>
+            <li>👆 <strong>Hover:</strong> Passe o cursor sobre qualquer nó para ver o ID e o escore completo.</li>
+        </ul>
     </div>
-
-    <div id="painel-2" class="painel"
-         style="display:none">
-        <iframe src="intermediacao.html"></iframe>
-    </div>
-
-    <div id="painel-3" class="painel"
-         style="display:none">
-        <iframe src="proximidade.html"></iframe>
-    </div>
-
-    <div id="painel-4" class="painel"
-         style="display:none">
-        <iframe src="autovetor.html"></iframe>
-    </div>
-
+</main>
 
 <script>
-function abrirAba(id, botao) {
-    document.querySelectorAll('.painel').forEach(
-        p => p.style.display = 'none'
-    );
-    document.getElementById('painel-' + id).style.display = 'block';
+const metricasDesc = {
+    'comunidades_louvain.html': {
+        title: 'Comunidades (Louvain)',
+        desc: 'Identifica agrupamentos de usuários que têm significativamente mais amizades entre si do que com o restante da rede.'
+    },
+    'grau.html': {
+        title: 'Grau de Centralidade',
+        desc: 'Mede a popularidade local imediata (número de conexões diretas). O nó 1447 é o líder com grau 0.0546.'
+    },
+    'intermediacao.html': {
+        title: 'Centralidade de Intermediação',
+        desc: 'Identifica nós-ponte e gatekeepers que interligam comunidades distintas. O nó 1537 é a ponte mais estratégica.'
+    },
+    'proximidade.html': {
+        title: 'Centralidade de Proximidade',
+        desc: 'Mede quem tem a menor distância média a todos os nós acessíveis, com o maior potencial de rápida difusão de informação. Líder: nó 1029.'
+    },
+    'autovetor.html': {
+        title: 'Centralidade de Autovetor',
+        desc: 'Mede a influência sistêmica e prestígio social (estar conectado a vizinhos que também são bem conectados). Líder: nó 1447.'
+    },
+    'generated_graph.html': {
+        title: 'Rede Base Completa',
+        desc: 'Topologia completa do subgrafo induzido com 404 nós e 1.075 arestas.'
+    }
+};
 
-    document.querySelectorAll('.tab').forEach(
-        b => b.classList.remove('active')
-    );
+function abrirAba(id, botao, url, nomeMetrica) {
+    document.querySelectorAll('.graph-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('painel-' + id).classList.add('active');
+
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     botao.classList.add('active');
+
+    document.getElementById('btn-nova-aba').href = url;
+
+    // Atualiza texto da legenda
+    const info = metricasDesc[url] || { title: nomeMetrica, desc: '' };
+    document.getElementById('info-title').textContent = info.title;
+    document.getElementById('info-desc').textContent = info.desc;
+}
+
+function toggleInfo() {
+    const card = document.getElementById('info-card');
+    card.classList.toggle('hidden');
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            alert(`Erro ao ativar tela cheia: ${err.message}`);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
 }
 </script>
 </body>
