@@ -13,7 +13,7 @@
 html, body {
     width: 100%;
     height: 100%;
-    overflow: hidden; /* Elimina rolagem dupla e preenche 100% da tela */
+    overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: #0f1117;
     color: #e6edf3;
@@ -104,31 +104,26 @@ header {
     cursor: pointer;
     transition: all 0.15s ease;
     text-decoration: none;
+    white-space: nowrap;
 }
 .action-btn:hover {
     background: #30363d;
     color: #f0f6fc;
     border-color: #8b949e;
 }
+.action-btn.physics-on {
+    background: #1f6feb;
+    color: #ffffff;
+    border-color: #388bfd;
+}
 
-/* Área Principal do Grafo (100% da viewport restante) */
+/* Área Principal do Grafo (100% da viewport restante, apenas 1 iframe ativo na memória) */
 main {
     flex: 1;
     width: 100%;
     height: calc(100vh - 52px);
     position: relative;
     background: #ffffff;
-}
-
-.graph-panel {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: none;
-}
-.graph-panel.active {
-    display: block;
 }
 
 iframe {
@@ -144,7 +139,7 @@ iframe {
     position: absolute;
     bottom: 20px;
     left: 20px;
-    max-width: 380px;
+    max-width: 390px;
     background: rgba(22, 27, 34, 0.95);
     backdrop-filter: blur(8px);
     color: #c9d1d9;
@@ -208,31 +203,37 @@ iframe {
     </div>
 
     <nav class="nav-tabs">
-        <button class="tab-btn active" onclick="abrirAba('0', this, 'comunidades_louvain.html', 'Comunidades (Louvain)')">
+        <button class="tab-btn active" onclick="abrirAba(this, 'louvain_communities.html', 'Comunidades (Louvain)')">
             Comunidades
         </button>
-        <button class="tab-btn" onclick="abrirAba('1', this, 'grau.html', 'Grau de Centralidade')">
+        <button class="tab-btn" onclick="abrirAba(this, 'degree.html', 'Grau de Centralidade')">
             Grau
         </button>
-        <button class="tab-btn" onclick="abrirAba('2', this, 'intermediacao.html', 'Intermediação')">
+        <button class="tab-btn" onclick="abrirAba(this, 'betweenness.html', 'Intermediação')">
             Intermediação
         </button>
-        <button class="tab-btn" onclick="abrirAba('3', this, 'proximidade.html', 'Proximidade')">
+        <button class="tab-btn" onclick="abrirAba(this, 'closeness.html', 'Proximidade')">
             Proximidade
         </button>
-        <button class="tab-btn" onclick="abrirAba('4', this, 'autovetor.html', 'Autovetor')">
+        <button class="tab-btn" onclick="abrirAba(this, 'eigenvector.html', 'Autovetor')">
             Autovetor
         </button>
-        <button class="tab-btn" onclick="abrirAba('5', this, 'generated_graph.html', 'Rede Base')">
+        <button class="tab-btn" onclick="abrirAba(this, 'generated_graph.html', 'Rede Base')">
             Rede Base
         </button>
     </nav>
 
     <div class="actions">
+        <button class="action-btn" onclick="centralizarGrafo()" title="Enquadrar todo o grafo no centro da tela">
+            🎯 Centralizar
+        </button>
+        <button id="btn-fisica" class="action-btn" onclick="alternarFisica()" title="Ativar/Desativar simulação contínua de forças">
+            ⚡ Física: Off (Estável)
+        </button>
         <button class="action-btn" onclick="toggleInfo()" title="Ver legenda e instruções">
             ℹ️ Legenda
         </button>
-        <a id="btn-nova-aba" class="action-btn" href="comunidades_louvain.html" target="_blank" title="Abrir esta visualização em uma aba independente">
+        <a id="btn-nova-aba" class="action-btn" href="louvain_communities.html" target="_blank" title="Abrir esta visualização em uma aba independente">
             ↗ Nova Aba
         </a>
         <button class="action-btn" onclick="toggleFullscreen()" title="Alternar modo Tela Cheia">
@@ -242,24 +243,8 @@ iframe {
 </header>
 
 <main>
-    <div id="painel-0" class="graph-panel active">
-        <iframe src="comunidades_louvain.html" loading="eager"></iframe>
-    </div>
-    <div id="painel-1" class="graph-panel">
-        <iframe src="grau.html" loading="lazy"></iframe>
-    </div>
-    <div id="painel-2" class="graph-panel">
-        <iframe src="intermediacao.html" loading="lazy"></iframe>
-    </div>
-    <div id="painel-3" class="graph-panel">
-        <iframe src="proximidade.html" loading="lazy"></iframe>
-    </div>
-    <div id="painel-4" class="graph-panel">
-        <iframe src="autovetor.html" loading="lazy"></iframe>
-    </div>
-    <div id="painel-5" class="graph-panel">
-        <iframe src="generated_graph.html" loading="lazy"></iframe>
-    </div>
+    <!-- Apenas 1 iframe na memória RAM/CPU por vez para máxima fluidez -->
+    <iframe id="viewer-frame" src="louvain_communities.html"></iframe>
 
     <!-- Card de Legenda e Dicas de Interação -->
     <div id="info-card" class="info-card">
@@ -268,59 +253,120 @@ iframe {
             <button class="close-btn" onclick="toggleInfo()">&times;</button>
         </h4>
         <p id="info-desc" style="color: #8b949e; font-size: 12px; margin-bottom: 8px;">
-            Mapeamento de círculos sociais e clusters densamente conectados na amostra.
+            Identifica agrupamentos de usuários que têm significativamente mais conexões entre si do que com o resto da rede (105 comunidades na amostra).
         </p>
         <ul>
             <li><span class="dot red"></span> <strong>Vermelho (Top 10):</strong> Nós com os maiores escores da métrica e rótulos explícitos.</li>
             <li><span class="dot gradient"></span> <strong>Gradiente / Cores:</strong> Variação proporcional ao valor ou à comunidade pertencente.</li>
-            <li>🔍 <strong>Zoom e Navegação:</strong> Use a roda do mouse para aproximar e clique-arraste para mover a visão da câmera.</li>
-            <li>👆 <strong>Hover:</strong> Passe o cursor sobre qualquer nó para ver o ID e o escore completo.</li>
+            <li>🔍 <strong>Zoom e Pan (60 FPS):</strong> Roda do mouse aproxima/afasta; clique e arraste move nós ou a câmera sem travamentos.</li>
+            <li>👆 <strong>Hover:</strong> Passe o cursor sobre qualquer nó para ver o ID e o valor exato.</li>
         </ul>
     </div>
 </main>
 
 <script>
+let fisicaAtiva = false;
+
 const metricasDesc = {
-    'comunidades_louvain.html': {
+    'louvain_communities.html': {
         title: 'Comunidades (Louvain)',
-        desc: 'Identifica agrupamentos de usuários que têm significativamente mais amizades entre si do que com o restante da rede.'
+        desc: 'Identifica agrupamentos de usuários que têm significativamente mais conexões entre si do que com o resto da rede (105 comunidades na amostra).'
     },
-    'grau.html': {
+    'degree.html': {
         title: 'Grau de Centralidade',
-        desc: 'Mede a popularidade local imediata (número de conexões diretas). O nó 1447 é o líder com grau 0.0546.'
+        desc: 'Mede a popularidade local imediata (conexões diretas). Líderes na amostra: nó 107 (0.2804), 2328 (0.0571) e 2511 (0.0471).'
     },
-    'intermediacao.html': {
+    'betweenness.html': {
         title: 'Centralidade de Intermediação',
-        desc: 'Identifica nós-ponte e gatekeepers que interligam comunidades distintas. O nó 1537 é a ponte mais estratégica.'
+        desc: 'Identifica nós-ponte e gatekeepers que conectam clusters distintos. Líderes: nó 107 (0.1170), 1666 (0.0444) e 3111 (0.0422).'
     },
-    'proximidade.html': {
+    'closeness.html': {
         title: 'Centralidade de Proximidade',
-        desc: 'Mede quem tem a menor distância média a todos os nós acessíveis, com o maior potencial de rápida difusão de informação. Líder: nó 1029.'
+        desc: 'Mede quem tem a menor distância média aos nós alcançáveis (maior velocidade de difusão). Líderes: nó 107 (0.2141), 1666 (0.1608) e 1450 (0.1482).'
     },
-    'autovetor.html': {
+    'eigenvector.html': {
         title: 'Centralidade de Autovetor',
-        desc: 'Mede a influência sistêmica e prestígio social (estar conectado a vizinhos que também são bem conectados). Líder: nó 1447.'
+        desc: 'Mede influência sistêmica e prestígio social (conexão com outros nós influentes). Líderes: nó 107 (0.5657), 1622 (0.1860) e 1377 (0.1781).'
     },
     'generated_graph.html': {
         title: 'Rede Base Completa',
-        desc: 'Topologia completa do subgrafo induzido com 404 nós e 1.075 arestas.'
+        desc: 'Topologia completa do subgrafo induzido com 404 nós e 824 arestas.'
     }
 };
 
-function abrirAba(id, botao, url, nomeMetrica) {
-    document.querySelectorAll('.graph-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('painel-' + id).classList.add('active');
+function atualizarBotaoFisica(estado) {
+    fisicaAtiva = estado;
+    const btn = document.getElementById('btn-fisica');
+    if (fisicaAtiva) {
+        btn.textContent = '⚡ Física: On';
+        btn.classList.add('physics-on');
+    } else {
+        btn.textContent = '⚡ Física: Off (Estável)';
+        btn.classList.remove('physics-on');
+    }
+}
+
+function abrirAba(botao, url, nomeMetrica) {
+    const frame = document.getElementById('viewer-frame');
+    if (!frame.src.endsWith(url)) {
+        frame.src = url;
+        atualizarBotaoFisica(false);
+    }
 
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     botao.classList.add('active');
 
     document.getElementById('btn-nova-aba').href = url;
 
-    // Atualiza texto da legenda
     const info = metricasDesc[url] || { title: nomeMetrica, desc: '' };
     document.getElementById('info-title').textContent = info.title;
     document.getElementById('info-desc').textContent = info.desc;
 }
+
+function sendIframeCommand(cmd) {
+    const frame = document.getElementById('viewer-frame');
+    if (!frame || !frame.contentWindow) return;
+
+    // 1. Envia via postMessage (compatível com protocolo file:// e restrições de mesma origem)
+    try {
+        frame.contentWindow.postMessage(cmd, '*');
+    } catch (e) {
+        console.warn('Falha no postMessage:', e);
+    }
+
+    // 2. Acesso direto seguro via try-catch (quando servido via HTTP/localhost)
+    try {
+        const net = frame.contentWindow.network;
+        if (net) {
+            if (cmd.action === 'fit') {
+                net.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+            } else if (cmd.action === 'setPhysics') {
+                net.setOptions({ physics: { enabled: cmd.enabled } });
+                if (cmd.enabled && typeof net.startSimulation === 'function') {
+                    net.startSimulation();
+                } else if (!cmd.enabled && typeof net.stopSimulation === 'function') {
+                    net.stopSimulation();
+                }
+            }
+        }
+    } catch (e) {
+        // Bloqueio esperado de Cross-Origin no protocolo file:// em navegadores Chromium/Firefox (postMessage atua)
+    }
+}
+
+function centralizarGrafo() {
+    sendIframeCommand({ action: 'fit' });
+}
+
+function alternarFisica() {
+    const novoEstado = !fisicaAtiva;
+    atualizarBotaoFisica(novoEstado);
+    sendIframeCommand({ action: 'setPhysics', enabled: novoEstado });
+}
+
+document.getElementById('viewer-frame').addEventListener('load', function() {
+    sendIframeCommand({ action: 'setPhysics', enabled: fisicaAtiva });
+});
 
 function toggleInfo() {
     const card = document.getElementById('info-card');
